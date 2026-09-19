@@ -14,11 +14,37 @@ const httpRequestsTotal = new client.Counter({
   help: 'Total number of HTTP requests received',
   registers: [register]
 });
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'HTTP request duration in seconds',
+  registers: [register]
+});
+
+const httpResponseStatusTotal = new client.Counter({
+  name: 'http_response_status_total',
+  help: 'Total number of HTTP responses by status class',
+  labelNames: ['status_class'],
+  registers: [register]
+});
+
 app.use(helmet());
 app.use(morgan('combined'));
 
 app.use((req, res, next) => {
   httpRequestsTotal.inc();
+
+  const end = httpRequestDuration.startTimer();
+
+  res.on('finish', () => {
+    end();
+
+    const statusClass = `${Math.floor(res.statusCode / 100)}xx`;
+
+    httpResponseStatusTotal.inc({
+        status_class: statusClass
+    });
+});
+
   next();
 });
 
