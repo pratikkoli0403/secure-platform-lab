@@ -1,0 +1,11 @@
+groups:
+  - name: application-availability
+    rules:
+      - alert: ApplicationDown
+        expr: up{job="secure-platform-app"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Secure Platform application is down"
+          description: "Prometheus cannot successfully scrape the application metrics endpoint."
